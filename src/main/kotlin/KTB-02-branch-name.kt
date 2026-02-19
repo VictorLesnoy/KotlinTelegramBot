@@ -3,9 +3,11 @@ package org.example
 import java.io.File
 import java.io.IOException
 
-data class Word(val original: String,
-                val translate: String,
-                val correctAnswersCount: Int = 0)
+data class Word(
+    val original: String,
+    val translate: String,
+    val correctAnswersCount: Int = 0
+)
 
 fun main() {
     val wordsFile: File = File("words.txt")
@@ -13,9 +15,10 @@ fun main() {
     try {
         val lines: List<String> = wordsFile.readLines()
         for (line in lines) {
-            val dictionary = line.split("|")
-            val word = Word(original = dictionary[0], translate = dictionary[1])
-            println(dictionary)
+            val parts = line.split("|")
+            parts.getOrNull(2)?.toIntOrNull() ?: 0
+            val word = Word(original = parts[0], translate = parts[1])
+            println(parts)
         }
     } catch (e: IOException) {
         println("Не найден файл ${e.message}.")
