@@ -36,7 +36,7 @@ fun main() {
                 "0 - Выход\n"
     )
     while (true) {
-        val input = readLine() ?: continue
+        val input = readlnOrNull() ?: continue
         when (input) {
             "1" -> {
                 println("Вы выбрали пункт 'Учить слова'")
