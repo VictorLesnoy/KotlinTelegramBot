@@ -9,24 +9,30 @@ data class Word(
     val correctAnswersCount: Int = 0
 )
 
-fun main() {
-    val wordsFile: File = File("words.txt")
-
+fun loadDictionary(filename: String): List<Word> {
+    val dictionary = mutableListOf<Word>()
     try {
-        val lines: List<String> = wordsFile.readLines()
+        val lines = File(filename).readLines()
         for (line in lines) {
             val parts = line.split("|")
             if (parts.size >= 2) {
                 val correctAnswers = parts.getOrNull(2)?.toIntOrNull() ?: 0
-                val word = Word(original = parts[0], translate = parts[1], correctAnswersCount = correctAnswers)
-                println(word)
+                val word = Word(parts[0], parts[1], correctAnswers)
+                dictionary.add(word)
             } else {
                 println("Пропущена некорректная строка: $line")
             }
         }
     } catch (e: IOException) {
-        println("Не найден файл ${e.message}.")
+        println("Ошибка при чтении файла: ${e.message}")
     }
+    return dictionary
+}
+
+fun main() {
+
+    val dictionary = loadDictionary("words.txt")
+    val wordsFile: File = File("words.txt")
 
     println(
         "Выберите один из пунктов меню.\n" +
@@ -40,14 +46,14 @@ fun main() {
         when (input) {
             "1" -> {
                 println("Вы выбрали пункт 'Учить слова'")
-                break
             }
+
             "2" -> {
                 println("Вы выбрали пункт 'Статистика'")
-                break
             }
+
             "0" -> break
-            else -> println("Вы введи некорректный символ")
+            else -> println("Введите число 1, 2 или 0")
         }
     }
 
