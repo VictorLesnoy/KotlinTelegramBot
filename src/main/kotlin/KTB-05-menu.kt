@@ -32,7 +32,6 @@ fun loadDictionary(filename: String): List<Word> {
 fun main() {
 
     val dictionary = loadDictionary("words.txt")
-    val wordsFile: File = File("words.txt")
 
     println(
         "Выберите один из пунктов меню.\n" +
@@ -52,7 +51,7 @@ fun main() {
                 println("Вы выбрали пункт 'Статистика'")
             }
 
-            "0" -> break
+            "0" -> return
             else -> println("Введите число 1, 2 или 0")
         }
     }
