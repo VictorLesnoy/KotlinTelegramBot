@@ -33,11 +33,13 @@ fun main() {
 
     val dictionary = loadDictionary("words.txt")
     val words = dictionary.size
-    val learnWordsCount = dictionary.count { it.correctAnswersCount >= 3 }
-    val percentLearnedWords = learnWordsCount / words
-    val learnedWords = dictionary.filter { it.correctAnswersCount >= 3 }
-
-
+    val learnWordsCount = dictionary.count { it.correctAnswersCount >= THREE }
+    val percentLearnedWords = {
+        if (words > 0) {
+            learnWordsCount * 100 / words
+        }
+    }
+    val learnedWords = dictionary.filter { it.correctAnswersCount >= THREE }
 
     println(
         "Выберите один из пунктов меню.\n" +
@@ -46,9 +48,11 @@ fun main() {
                 "2 - Статистика\n" +
                 "0 - Выход\n"
     )
+
     while (true) {
         val input = readlnOrNull() ?: continue
         when (input) {
+
             "1" -> {
                 println("Вы выбрали пункт 'Учить слова'")
             }
@@ -68,7 +72,10 @@ fun main() {
 
             "0" -> return
             else -> println("Введите число 1, 2 или 0")
+
         }
     }
 
 }
+
+const val THREE = 3
