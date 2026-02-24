@@ -51,6 +51,7 @@ fun main() {
 
     while (true) {
         val input = readlnOrNull() ?: continue
+
         when (input) {
 
             "1" -> {
