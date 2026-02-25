@@ -34,11 +34,11 @@ fun main() {
     val dictionary = loadDictionary("words.txt")
     val words = dictionary.size
     val learnWordsCount = dictionary.count { it.correctAnswersCount >= THREE }
-    val percentLearnedWords = {
+    val percentLearnedWords =
         if (words > 0) {
             learnWordsCount * 100 / words
-        }
-    }
+        } else 0
+
     val learnedWords = dictionary.filter { it.correctAnswersCount >= THREE }
 
     println(
