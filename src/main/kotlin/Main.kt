@@ -33,13 +33,7 @@ fun main() {
 
     val dictionary = loadDictionary("words.txt")
     val words = dictionary.size
-    val learnWordsCount = dictionary.count { it.correctAnswersCount >= THREE }
-    val percentLearnedWords =
-        if (words > 0) {
-            learnWordsCount * 100 / words
-        } else 0
 
-    val learnedWords = dictionary.filter { it.correctAnswersCount >= THREE }
 
     println(
         "Выберите один из пунктов меню.\n" +
@@ -60,6 +54,14 @@ fun main() {
 
             "2" -> {
                 println("Вы выбрали пункт 'Статистика'")
+                val learnWordsCount = dictionary.count { it.correctAnswersCount >= CORRECT_ANSWERS_REQUIRED }
+                val percentLearnedWords =
+                    if (words > 0) {
+                        learnWordsCount * 100 / words
+                    } else 0
+
+                val learnedWords = dictionary.filter { it.correctAnswersCount >= CORRECT_ANSWERS_REQUIRED }
+
                 println("Выучено $learnWordsCount из $words слов | $percentLearnedWords%")
                 if (learnedWords.isNotEmpty()) {
                     println("\nСписок выученных слов:")
@@ -79,4 +81,4 @@ fun main() {
 
 }
 
-const val THREE = 3
+const val CORRECT_ANSWERS_REQUIRED = 3
