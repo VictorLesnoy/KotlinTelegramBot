@@ -2,7 +2,6 @@ package org.example
 
 import java.io.File
 import java.io.IOException
-import java.util.Dictionary
 
 data class Word(
     val original: String,
@@ -30,94 +29,112 @@ fun loadDictionary(filename: String): List<Word> {
     return dictionary
 }
 
-fun learn(dictionary: MutableList<Word>) {
+fun learn(dictionary: MutableList<Word>): Boolean {
     val notLearnedWords = dictionary.filter { it.correctAnswersCount < CORRECT_ANSWERS_REQUIRED }
+    if (notLearnedWords.isEmpty()) {
+        println("Все слова выучены!")
+        return false
+    }
+
     val randomWord = notLearnedWords.random()
     val correctAnswer = randomWord.translate
+    val variants = mutableSetOf<String>()
 
-    val variants = mutableSetOf(correctAnswer)
-    while (variants.size < 4 && variants.size < dictionary.size) {
-        variants.add(dictionary.random().translate)
+    val candidates = notLearnedWords.filter { it.translate != correctAnswer }.map { it.translate }.toMutableList()
+    while (variants.size < 3 && candidates.isNotEmpty()) {
+        variants.add(candidates.removeAt(0))
     }
+
+    val allCandidates =
+        dictionary.map { it.translate }.filter { it != correctAnswer && it !in variants }.toMutableList()
+    while (variants.size < 3 && allCandidates.isNotEmpty()) {
+        variants.add(allCandidates.removeAt(0))
+    }
+
+    variants.add(correctAnswer)
     val shuffledVariants = variants.shuffled()
 
-    println("Выберите правильный перевод для слова: '${randomWord.original}'")
+    println("Выберите правильный перевод для слова: '${randomWord.original}' (0 - выход)")
     shuffledVariants.forEachIndexed { index, variant ->
         println("${index + 1}: $variant")
     }
 
     val input = readlnOrNull()?.toIntOrNull()
+    if (input == 0) {
+        println("Выход из режима обучения.")
+        return false
+    }
     if (input == null || input !in 1..shuffledVariants.size) {
         println("Неверный ввод, попробуйте снова.")
-        return
+        return true
     }
 
     if (shuffledVariants[input - 1] == correctAnswer) {
         println("Верно!")
         val index = dictionary.indexOf(randomWord)
-        val updatedWord = randomWord.copy(correctAnswersCount = randomWord.correctAnswersCount + 1)
-        dictionary[index] = updatedWord
+        dictionary[index] = randomWord.copy(correctAnswersCount = randomWord.correctAnswersCount + 1)
     } else {
         println("Неправильно. Правильный ответ: $correctAnswer")
     }
+
+    return true
 }
 
 fun main() {
 
     val dictionary = loadDictionary("words.txt").toMutableList()
     val words = dictionary.size
-    val notLearnedList: MutableList<String> = mutableListOf()
+
+    println("Слов в словаре: ${dictionary.size}")
+    dictionary.forEach { println("${it.original} → ${it.translate}, count: ${it.correctAnswersCount}") }
 
     while (true) {
         val notLearnedWords = dictionary.filter { it.correctAnswersCount < CORRECT_ANSWERS_REQUIRED }
 
-            println(
-                "Выберите один из пунктов меню.\n" +
-                        "Меню:\n" +
-                        "1 - Учить слова\n" +
-                        "2 - Статистика\n" +
-                        "0 - Выход\n"
-            )
+        println(
+            "Выберите один из пунктов меню.\n" +
+                    "Меню:\n" +
+                    "1 - Учить слова\n" +
+                    "2 - Статистика\n" +
+                    "0 - Выход\n"
+        )
 
-                val input = readlnOrNull() ?: continue
+        val input = readlnOrNull() ?: continue
 
-                when (input) {
+        when (input) {
 
-                    "1" -> {
-                        println("Вы выбрали пункт 'Учить слова'")
-                        if (notLearnedWords.isEmpty()) {
-                            println("Все слова выучены, нечего учить.")
-                        } else {
-                            learn(dictionary)
-                        }
-                    }
-
-                    "2" -> {
-                        println("Вы выбрали пункт 'Статистика'")
-                        val learnWordsCount = dictionary.count { it.correctAnswersCount >= CORRECT_ANSWERS_REQUIRED }
-                        val percentLearnedWords =
-                            if (words > 0) {
-                                learnWordsCount * 100 / words
-                            } else 0
-
-                        val learnedWords = dictionary.filter { it.correctAnswersCount >= CORRECT_ANSWERS_REQUIRED }
-
-                        println("Выучено $learnWordsCount из $words слов | $percentLearnedWords%")
-                        if (learnedWords.isNotEmpty()) {
-                            println("\nСписок выученных слов:")
-                            learnedWords.forEach { word ->
-                                println("  ${word.original} → ${word.translate}")
-                            }
-                        } else {
-                            println("Пока нет выученных слов.")
-                        }
-                    }
-
-                    "0" -> return
-                    else -> println("Введите число 1, 2 или 0")
-
+            "1" -> {
+                while (learn(dictionary)) {
                 }
             }
+
+
+            "2" -> {
+                println("Вы выбрали пункт 'Статистика'")
+                val learnWordsCount = dictionary.count { it.correctAnswersCount >= CORRECT_ANSWERS_REQUIRED }
+                val percentLearnedWords =
+                    if (words > 0) {
+                        learnWordsCount * 100 / words
+                    } else 0
+
+                val learnedWords = dictionary.filter { it.correctAnswersCount >= CORRECT_ANSWERS_REQUIRED }
+
+                println("Выучено $learnWordsCount из $words слов | $percentLearnedWords%")
+                if (learnedWords.isNotEmpty()) {
+                    println("\nСписок выученных слов:")
+                    learnedWords.forEach { word ->
+                        println("  ${word.original} → ${word.translate}")
+                    }
+                } else {
+                    println("Пока нет выученных слов.")
+                }
+            }
+
+            "0" -> return
+            else -> println("Введите число 1, 2 или 0")
+
         }
+    }
+}
 
 const val CORRECT_ANSWERS_REQUIRED = 3
