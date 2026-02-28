@@ -29,7 +29,7 @@ fun loadDictionary(filename: String): List<Word> {
     return dictionary
 }
 
-fun learn(dictionary: MutableList<Word>): Boolean {
+/*fun learn(dictionary: MutableList<Word>): Boolean {
     val notLearnedWords = dictionary.filter { it.correctAnswersCount < CORRECT_ANSWERS_REQUIRED }
     if (notLearnedWords.isEmpty()) {
         println("Все слова выучены!")
@@ -78,7 +78,7 @@ fun learn(dictionary: MutableList<Word>): Boolean {
     }
 
     return true
-}
+}*/
 
 fun main() {
 
@@ -90,6 +90,7 @@ fun main() {
 
     while (true) {
         val notLearnedWords = dictionary.filter { it.correctAnswersCount < CORRECT_ANSWERS_REQUIRED }
+
 
         println(
             "Выберите один из пунктов меню.\n" +
@@ -104,10 +105,33 @@ fun main() {
         when (input) {
 
             "1" -> {
-                while (learn(dictionary)) {
+                while (true) { // явный while(true) читается чище и понятнее `while (learn(dictionary)) { }`
+                    val notLearnedWords = dictionary.filter { it.correctAnswersCount < CORRECT_ANSWERS_REQUIRED } // формируем список невыученных слов
+
+                    if (notLearnedWords.isEmpty()) {
+                        println("Все слова выучены!")
+                        break // выходим из цикла если все слова выучены
+                    }
+
+                    val questionWords = if (notLearnedWords.size >= 4) { // формируем список вариантов, если невыученных слов достаточно то просто список перемешиваем и берем 4
+                        notLearnedWords.shuffled().take(4)
+                    } else {
+                        val additionalWords = dictionary // если невыученных слов меньше 4, то добираем из общего словаря
+                            .filter { it !in notLearnedWords }
+                            .shuffled()
+                            .take(4 - notLearnedWords.size)
+
+                        (notLearnedWords + additionalWords).shuffled()
+                    }
+
+                    val correctWord = questionWords.random() // получаем слово, которое будем спрашивать
+                    val variants = questionWords.map { it.translate }.shuffled() // формируем список ответов на русском
+
+                    // тут вывод variants
+
+                    // в следующем уроке обработаем результаты ответа
                 }
             }
-
 
             "2" -> {
                 println("Вы выбрали пункт 'Статистика'")
