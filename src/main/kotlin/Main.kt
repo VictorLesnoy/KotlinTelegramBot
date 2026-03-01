@@ -29,57 +29,6 @@ fun loadDictionary(filename: String): List<Word> {
     return dictionary
 }
 
-/*fun learn(dictionary: MutableList<Word>): Boolean {
-    val notLearnedWords = dictionary.filter { it.correctAnswersCount < CORRECT_ANSWERS_REQUIRED }
-    if (notLearnedWords.isEmpty()) {
-        println("Все слова выучены!")
-        return false
-    }
-
-    val randomWord = notLearnedWords.random()
-    val correctAnswer = randomWord.translate
-    val variants = mutableSetOf<String>()
-
-    val candidates = notLearnedWords.filter { it.translate != correctAnswer }.map { it.translate }.toMutableList()
-    while (variants.size < 3 && candidates.isNotEmpty()) {
-        variants.add(candidates.removeAt(0))
-    }
-
-    val allCandidates =
-        dictionary.map { it.translate }.filter { it != correctAnswer && it !in variants }.toMutableList()
-    while (variants.size < 3 && allCandidates.isNotEmpty()) {
-        variants.add(allCandidates.removeAt(0))
-    }
-
-    variants.add(correctAnswer)
-    val shuffledVariants = variants.shuffled()
-
-    println("Выберите правильный перевод для слова: '${randomWord.original}' (0 - выход)")
-    shuffledVariants.forEachIndexed { index, variant ->
-        println("${index + 1}: $variant")
-    }
-
-    val input = readlnOrNull()?.toIntOrNull()
-    if (input == 0) {
-        println("Выход из режима обучения.")
-        return false
-    }
-    if (input == null || input !in 1..shuffledVariants.size) {
-        println("Неверный ввод, попробуйте снова.")
-        return true
-    }
-
-    if (shuffledVariants[input - 1] == correctAnswer) {
-        println("Верно!")
-        val index = dictionary.indexOf(randomWord)
-        dictionary[index] = randomWord.copy(correctAnswersCount = randomWord.correctAnswersCount + 1)
-    } else {
-        println("Неправильно. Правильный ответ: $correctAnswer")
-    }
-
-    return true
-}*/
-
 fun main() {
 
     val dictionary = loadDictionary("words.txt").toMutableList()
@@ -105,18 +54,18 @@ fun main() {
         when (input) {
 
             "1" -> {
-                while (true) { // явный while(true) читается чище и понятнее `while (learn(dictionary)) { }`
-                    val notLearnedWords = dictionary.filter { it.correctAnswersCount < CORRECT_ANSWERS_REQUIRED } // формируем список невыученных слов
+                while (true) {
+                    val notLearnedWords = dictionary.filter { it.correctAnswersCount < CORRECT_ANSWERS_REQUIRED }
 
                     if (notLearnedWords.isEmpty()) {
                         println("Все слова выучены!")
-                        break // выходим из цикла если все слова выучены
+                        break
                     }
 
-                    val questionWords = if (notLearnedWords.size >= 4) { // формируем список вариантов, если невыученных слов достаточно то просто список перемешиваем и берем 4
+                    val questionWords = if (notLearnedWords.size >= 4) {
                         notLearnedWords.shuffled().take(4)
                     } else {
-                        val additionalWords = dictionary // если невыученных слов меньше 4, то добираем из общего словаря
+                        val additionalWords = dictionary
                             .filter { it !in notLearnedWords }
                             .shuffled()
                             .take(4 - notLearnedWords.size)
@@ -124,12 +73,42 @@ fun main() {
                         (notLearnedWords + additionalWords).shuffled()
                     }
 
-                    val correctWord = questionWords.random() // получаем слово, которое будем спрашивать
-                    val variants = questionWords.map { it.translate }.shuffled() // формируем список ответов на русском
+                    val correctWord = questionWords.random()
+                    val variants = questionWords.map { it.translate }.toMutableList()
+                    val correctAnswer = correctWord.translate
 
-                    // тут вывод variants
+                    if (variants.size < 4) {
+                        val others = dictionary.map { it.translate }.filter { it !in variants }.shuffled()
+                        for (word in others) {
+                            if (variants.size >= 4) break
+                            variants.add(word)
+                        }
+                    }
 
-                    // в следующем уроке обработаем результаты ответа
+                    val shuffledVariants = variants.shuffled()
+
+                    println("Выберите правильный перевод для слова: '${correctWord.original}' (0 - выход)")
+                    shuffledVariants.forEachIndexed { index, variant ->
+                        println("${index + 1}: $variant")
+                    }
+
+                    val input = readlnOrNull()?.toIntOrNull()
+                    if (input == 0) break
+                    if (input == null || input !in 1..shuffledVariants.size) {
+                        println("Неверный ввод, попробуйте снова.")
+                        continue
+                    }
+
+                    if (shuffledVariants[input - 1] == correctAnswer) {
+                        println("Верно!")
+                        val idx = dictionary.indexOfFirst { it.original == correctWord.original }
+                        if (idx != -1 && dictionary[idx].correctAnswersCount < CORRECT_ANSWERS_REQUIRED) {
+                            dictionary[idx] = dictionary[idx].copy(correctAnswersCount = dictionary[idx].correctAnswersCount + 1)
+                        }
+                    } else {
+                        println("Неправильно. Правильный ответ: $correctAnswer")
+                    }
+
                 }
             }
 
