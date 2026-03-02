@@ -29,6 +29,17 @@ fun loadDictionary(filename: String): List<Word> {
     return dictionary
 }
 
+fun saveDictionary(dictionary: List<Word>, filename: String) {
+    try {
+        val fileContent = dictionary.joinToString("\n") {
+            "${it.original}|${it.translate}|${it.correctAnswersCount}"
+        }
+        File(filename).writeText(fileContent)
+    } catch (e: IOException) {
+        println("Ошибка записи в файл: ${e.message}")
+    }
+}
+
 fun main() {
 
     val dictionary = loadDictionary("words.txt").toMutableList()
@@ -38,8 +49,6 @@ fun main() {
     dictionary.forEach { println("${it.original} → ${it.translate}, count: ${it.correctAnswersCount}") }
 
     while (true) {
-        val notLearnedWords = dictionary.filter { it.correctAnswersCount < CORRECT_ANSWERS_REQUIRED }
-
 
         println(
             "Выберите один из пунктов меню.\n" +
@@ -49,9 +58,9 @@ fun main() {
                     "0 - Выход\n"
         )
 
-        val input = readlnOrNull() ?: continue
+        val menuOption = readlnOrNull() ?: continue
 
-        when (input) {
+        when (menuOption) {
 
             "1" -> {
                 while (true) {
@@ -62,8 +71,8 @@ fun main() {
                         break
                     }
 
-                    val questionWords = if (notLearnedWords.size >= 4) {
-                        notLearnedWords.shuffled().take(4)
+                    val questionWords = if (notLearnedWords.size >= NUMBER_OF_VARIANTS) {
+                        notLearnedWords.shuffled().take(NUMBER_OF_VARIANTS)
                     } else {
                         val additionalWords = dictionary
                             .filter { it !in notLearnedWords }
@@ -87,10 +96,11 @@ fun main() {
 
                     val shuffledVariants = variants.shuffled()
 
-                    println("Выберите правильный перевод для слова: '${correctWord.original}' (0 - выход)")
+                    println("\nВыберите правильный перевод для слова: '${correctWord.original}'")
                     shuffledVariants.forEachIndexed { index, variant ->
                         println("${index + 1}: $variant")
                     }
+                    println("-----------\n0 - Меню")
 
                     val input = readlnOrNull()?.toIntOrNull()
                     if (input == 0) break
@@ -103,7 +113,9 @@ fun main() {
                         println("Верно!")
                         val idx = dictionary.indexOfFirst { it.original == correctWord.original }
                         if (idx != -1 && dictionary[idx].correctAnswersCount < CORRECT_ANSWERS_REQUIRED) {
-                            dictionary[idx] = dictionary[idx].copy(correctAnswersCount = dictionary[idx].correctAnswersCount + 1)
+                            dictionary[idx] =
+                                dictionary[idx].copy(correctAnswersCount = dictionary[idx].correctAnswersCount + 1)
+                            saveDictionary(dictionary, "words.txt")
                         }
                     } else {
                         println("Неправильно. Правильный ответ: $correctAnswer")
@@ -141,3 +153,4 @@ fun main() {
 }
 
 const val CORRECT_ANSWERS_REQUIRED = 3
+const val NUMBER_OF_VARIANTS = 4
