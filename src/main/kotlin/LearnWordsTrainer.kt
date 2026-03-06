@@ -21,14 +21,14 @@ class LearnWordsTrainer {
     fun getStatistics(): Statistics {
         val learned = dictionary.filter { it.correctAnswersCount >= CORRECT_ANSWERS_REQUIRED }.size
         val total = dictionary.size
-        val percent = learned * 100 / total
+        val percent = if (total != 0) learned * 100 / total else 0
         return Statistics(learned, total, percent)
     }
 
     fun getNextQuestion(): Question? {
         val notLearnedList = dictionary.filter { it.correctAnswersCount < CORRECT_ANSWERS_REQUIRED }
         if (notLearnedList.isEmpty()) return null
-        val questionWords = notLearnedList.take(NUMBER_OF_VARIANTS).shuffled()
+        val questionWords = notLearnedList.shuffled().take(NUMBER_OF_VARIANTS)
         val correctAnswer = questionWords.random()
         question = Question(
             variants = questionWords,
@@ -37,31 +37,36 @@ class LearnWordsTrainer {
         return question
     }
 
-    fun checkAnswer(userAnswerIndex: Int?): Boolean {
-        return question?.let { 
+    fun checkAnswer(userAnswerIndex: Int?): Boolean =
+        question?.let {
             val correctAnswerId = it.variants.indexOf(it.correctAnswer)
-            if (correctAnswerId == userAnswerIndex) {
+            val isCorrect = (correctAnswerId == userAnswerIndex)
+            if (isCorrect) {
                 it.correctAnswer.correctAnswersCount++
                 saveDictionary(dictionary)
-                true
-            } else {
-                false
             }
+            isCorrect
         } ?: false
-    }
 
     private fun loadDictionary(): List<Word> {
         val dictionary = mutableListOf<Word>()
-        val wordsFile = File("words.txt")
-        wordsFile.readLines().forEach {
-            val splitLine = it.split("|")
-            dictionary.add(Word(splitLine[0], splitLine[1],splitLine[2].toIntOrNull() ?: 0))
+        val wordsFile = File(FILE_NAME)
+        wordsFile.forEachLine { line ->
+            val splitLine = line.split("|")
+            if (splitLine.size >= 3) {
+                val original = splitLine[0]
+                val translate = splitLine[1]
+                val count = splitLine[2].toIntOrNull() ?: 0
+                dictionary.add(Word(original, translate, count))
+            } else {
+                println("Неверный формат строки: $line")
+            }
         }
         return dictionary
     }
 
     private fun saveDictionary(words: List<Word>) {
-        val wordsFile = File ("words.txt")
+        val wordsFile = File(FILE_NAME)
         wordsFile.writeText("")
         for (word in words) {
             wordsFile.appendText("${word.original}|${word.translate}|${word.correctAnswersCount}\n")
@@ -69,3 +74,5 @@ class LearnWordsTrainer {
     }
 
 }
+
+const val FILE_NAME = "words.txt"
