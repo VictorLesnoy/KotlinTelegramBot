@@ -28,8 +28,19 @@ class LearnWordsTrainer {
     fun getNextQuestion(): Question? {
         val notLearnedList = dictionary.filter { it.correctAnswersCount < CORRECT_ANSWERS_REQUIRED }
         if (notLearnedList.isEmpty()) return null
-        val questionWords = notLearnedList.shuffled().take(NUMBER_OF_VARIANTS)
+        val variants = mutableListOf<Word>()
+        variants += notLearnedList.shuffled()
+
+        if (variants.size < NUMBER_OF_VARIANTS) {
+            val learnedList = dictionary.filter { it.correctAnswersCount >= CORRECT_ANSWERS_REQUIRED }
+                .shuffled()
+                .take(NUMBER_OF_VARIANTS - variants.size)
+            variants += learnedList
+        }
+
+        val questionWords = variants.take(NUMBER_OF_VARIANTS)
         val correctAnswer = questionWords.random()
+
         question = Question(
             variants = questionWords,
             correctAnswer = correctAnswer,
@@ -37,30 +48,46 @@ class LearnWordsTrainer {
         return question
     }
 
-    fun checkAnswer(userAnswerIndex: Int?): Boolean =
-        question?.let {
-            val correctAnswerId = it.variants.indexOf(it.correctAnswer)
-            val isCorrect = (correctAnswerId == userAnswerIndex)
-            if (isCorrect) {
-                it.correctAnswer.correctAnswersCount++
-                saveDictionary(dictionary)
-            }
-            isCorrect
-        } ?: false
+    fun checkAnswer(userAnswerIndex: Int?): Boolean {
+        if (userAnswerIndex == null) {
+            println("Пожалуйста, выберите вариант ответа числом.")
+            return false
+        }
+        val currentQuestion = question ?: return false
+        val correctAnswerId = currentQuestion.variants.indexOf(currentQuestion.correctAnswer)
+        return if (userAnswerIndex == correctAnswerId) {
+            currentQuestion.correctAnswer.correctAnswersCount++
+            saveDictionary(dictionary)
+            println("Правильно!")
+            true
+        } else {
+            println("Неправильно!")
+            false
+        }
+    }
 
     private fun loadDictionary(): List<Word> {
         val dictionary = mutableListOf<Word>()
         val wordsFile = File(FILE_NAME)
-        wordsFile.forEachLine { line ->
-            val splitLine = line.split("|")
-            if (splitLine.size >= 3) {
-                val original = splitLine[0]
-                val translate = splitLine[1]
-                val count = splitLine[2].toIntOrNull() ?: 0
-                dictionary.add(Word(original, translate, count))
-            } else {
-                println("Неверный формат строки: $line")
+        try {
+            if (!wordsFile.exists()) {
+                println("Файл $FILE_NAME не найден, создаю новый.")
+                wordsFile.createNewFile()
+                return dictionary
             }
+            wordsFile.forEachLine { line ->
+                val splitLine = line.split("|")
+                if (splitLine.size >= 3) {
+                    val original = splitLine[0]
+                    val translate = splitLine[1]
+                    val count = splitLine[2].toIntOrNull() ?: 0
+                    dictionary.add(Word(original, translate, count))
+                } else {
+                    println("Неверный формат строки: $line")
+                }
+            }
+        } catch (e: Exception) {
+            println("Ошибка при чтении файла: ${e.message}")
         }
         return dictionary
     }
