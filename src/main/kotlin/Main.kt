@@ -38,13 +38,18 @@ fun main() {
                     } else {
                         println(question.asConsoleString())
 
-                        val userAnswerInput = readln().toIntOrNull()
-                        if (userAnswerInput == 0) break
+                        val userAnswerInput = readln()
+                        if (userAnswerInput == "0") break
+                        val userAnswerIndex = userAnswerInput.toIntOrNull()?.minus(1)
 
-                        if (trainer.checkAnswer(userAnswerInput?.minus(1))) {
-                            println("Верно!\n")
-                        } else {
-                            println("Неправильно. ${question.correctAnswer.original} - это ${question.correctAnswer.translate}")
+                        when (trainer.checkAnswer(userAnswerIndex)) {
+                            LearnWordsTrainer.CheckAnswerResult.CORRECT -> println("Верно!\n")
+                            LearnWordsTrainer.CheckAnswerResult.INCORRECT -> {
+                                println("Неправильно. ${question.correctAnswer.original} - это ${question.correctAnswer.translate}\n")
+                            }
+
+                            LearnWordsTrainer.CheckAnswerResult.INVALID_INPUT -> {
+                            }
                         }
                     }
                 }

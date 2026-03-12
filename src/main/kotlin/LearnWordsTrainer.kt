@@ -48,21 +48,30 @@ class LearnWordsTrainer {
         return question
     }
 
-    fun checkAnswer(userAnswerIndex: Int?): Boolean {
+    enum class CheckAnswerResult {
+        CORRECT,
+        INCORRECT,
+        INVALID_INPUT
+    }
+
+    fun checkAnswer(userAnswerIndex: Int?): CheckAnswerResult {
         if (userAnswerIndex == null) {
             println("Пожалуйста, выберите вариант ответа числом.")
-            return false
+            return CheckAnswerResult.INVALID_INPUT
         }
-        val currentQuestion = question ?: return false
+        val currentQuestion = question ?: return CheckAnswerResult.INVALID_INPUT
+        if (userAnswerIndex !in 0 until currentQuestion.variants.size) {
+            println("Неверный номер варианта. Выберите число от 0 до ${currentQuestion.variants.size}.")
+            return CheckAnswerResult.INVALID_INPUT
+        }
+
         val correctAnswerId = currentQuestion.variants.indexOf(currentQuestion.correctAnswer)
         return if (userAnswerIndex == correctAnswerId) {
             currentQuestion.correctAnswer.correctAnswersCount++
             saveDictionary(dictionary)
-            println("Правильно!")
-            true
+            CheckAnswerResult.CORRECT
         } else {
-            println("Неправильно!")
-            false
+            CheckAnswerResult.INCORRECT
         }
     }
 
