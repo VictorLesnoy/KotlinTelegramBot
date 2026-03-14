@@ -10,6 +10,10 @@ fun main(args: Array<String>) {
     val botToken = args[0]
     var updateId = 0
 
+    val botInfo: String = getBotInfo(botToken)
+    println("Информация о боте (getMe):")
+    println(botInfo)
+
     while (true) {
         Thread.sleep(2000)
         val updates: String = getUpdates(botToken, updateId)
@@ -28,6 +32,15 @@ fun getUpdates(botToken: String, updateId: Int): String {
     val urlGetUpdates = "https://api.telegram.org/bot$botToken/getUpdates?offset=$updateId"
     val client: HttpClient = HttpClient.newBuilder().build()
     val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
+    val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+
+    return response.body()
+}
+
+fun getBotInfo(botToken: String): String {
+    val urlGetMe = "https://api.telegram.org/bot$botToken/getMe"
+    val client: HttpClient = HttpClient.newBuilder().build()
+    val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetMe)).build()
     val response = client.send(request, HttpResponse.BodyHandlers.ofString())
 
     return response.body()
