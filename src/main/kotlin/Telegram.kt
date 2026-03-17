@@ -5,6 +5,11 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
+const val BASE_URL = "https://api.telegram.org/bot/"
+
+private val UPDATE_ID_REGEX = Regex("\"update_id\":(\\d+)")
+private val TEXT_REGEX = Regex("\"text\":\"(.+?)\"")
+
 fun main(args: Array<String>) {
 
     val botToken = args[0]
@@ -19,17 +24,20 @@ fun main(args: Array<String>) {
         val updates: String = getUpdates(botToken, updateId)
         println(updates)
 
-        val startUpdateId = updates.lastIndexOf("update_id")
-        val endUpdateId = updates.lastIndexOf(",\n\"message\"")
-        if (startUpdateId == -1 || endUpdateId == -1) continue
-        val updateIdString = updates.substring(startUpdateId + 11, endUpdateId)
-        updateId = updateIdString.toInt() + 1
-    }
+        val ids = UPDATE_ID_REGEX.findAll(updates)
+            .mapNotNull { it.groupValues.getOrNull(1)?.toIntOrNull() }
+            .toList()
+        if (ids.isNotEmpty()) updateId = (ids.maxOrNull() ?: updateId) + 1
 
+        val textMatch = TEXT_REGEX.find(updates)
+        if (textMatch != null) {
+            println(textMatch.groupValues[1])
+        }
+    }
 }
 
 fun getUpdates(botToken: String, updateId: Int): String {
-    val urlGetUpdates = "https://api.telegram.org/bot$botToken/getUpdates?offset=$updateId"
+    val urlGetUpdates = "$BASE_URL$botToken/getUpdates?offset=$updateId"
     val client: HttpClient = HttpClient.newBuilder().build()
     val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
     val response = client.send(request, HttpResponse.BodyHandlers.ofString())
@@ -38,7 +46,7 @@ fun getUpdates(botToken: String, updateId: Int): String {
 }
 
 fun getBotInfo(botToken: String): String {
-    val urlGetMe = "https://api.telegram.org/bot$botToken/getMe"
+    val urlGetMe = "$BASE_URL$botToken/getMe"
     val client: HttpClient = HttpClient.newBuilder().build()
     val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetMe)).build()
     val response = client.send(request, HttpResponse.BodyHandlers.ofString())
