@@ -7,6 +7,9 @@ import java.net.http.HttpResponse
 
 const val BASE_URL = "https://api.telegram.org/bot/"
 
+private val UPDATE_ID_REGEX = Regex("\"update_id\":(\\d+)")
+private val TEXT_REGEX = Regex("\"text\":\"(.+?)\"")
+
 fun main(args: Array<String>) {
 
     val botToken = args[0]
@@ -21,19 +24,16 @@ fun main(args: Array<String>) {
         val updates: String = getUpdates(botToken, updateId)
         println(updates)
 
-        val startUpdateId = updates.lastIndexOf("update_id")
-        val endUpdateId = updates.lastIndexOf(",\n\"message\"")
-        if (startUpdateId == -1 || endUpdateId == -1) continue
-        val updateIdString = updates.substring(startUpdateId + 11, endUpdateId)
-        updateId = updateIdString.toInt() + 1
+        val ids = UPDATE_ID_REGEX.findAll(updates)
+            .mapNotNull { it.groupValues.getOrNull(1)?.toIntOrNull() }
+            .toList()
+        if (ids.isNotEmpty()) updateId = (ids.maxOrNull() ?: updateId) + 1
 
-        val messageTextRegex: Regex = "\"text\":\"(.+?)\"".toRegex()
-        val matchResult: MatchResult? = messageTextRegex.find(updates)
-        val groups = matchResult?.groups
-        val text = groups?.get(1)?.value
-        println(text)
+        val textMatch = TEXT_REGEX.find(updates)
+        if (textMatch != null) {
+            println(textMatch.groupValues[1])
+        }
     }
-
 }
 
 fun getUpdates(botToken: String, updateId: Int): String {
