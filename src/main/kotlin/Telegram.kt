@@ -7,10 +7,11 @@ import java.net.http.HttpResponse
 
 const val BASE_URL = "https://api.telegram.org/bot/"
 
-private val UPDATE_ID_REGEX = Regex("\"update_id\":(\\d+)")
-private val TEXT_REGEX = Regex("\"text\":\"(.+?)\"")
-
 fun main(args: Array<String>) {
+
+    val updateIdRegex = Regex("\"update_id\":(\\d+)")
+    val textRegex = Regex("\"text\":\"(.+?)\"")
+    val chatIdRegex = Regex("\"chat\":\\{\"id\":(-?\\d+)")
 
     val botToken = args[0]
     var updateId = 0
@@ -24,14 +25,23 @@ fun main(args: Array<String>) {
         val updates: String = getUpdates(botToken, updateId)
         println(updates)
 
-        val ids = UPDATE_ID_REGEX.findAll(updates)
+        val ids = updateIdRegex.findAll(updates)
             .mapNotNull { it.groupValues.getOrNull(1)?.toIntOrNull() }
             .toList()
         if (ids.isNotEmpty()) updateId = (ids.maxOrNull() ?: updateId) + 1
 
-        val textMatch = TEXT_REGEX.find(updates)
-        if (textMatch != null) {
-            println(textMatch.groupValues[1])
+        val chatIdMatch = chatIdRegex.find(updates)
+        val textMatch = textRegex.find(updates)
+
+        if (chatIdMatch != null && textMatch != null) {
+            val chatId = chatIdMatch.groupValues[1].toLong()
+            val text = textMatch.groupValues[1]
+            println("Получено сообщение: '$text' от chat_id=$chatId")
+
+            if (text == "Hello") {
+                sendMessage(botToken, chatId, text)
+                println("Ответ отправлен: '$text'")
+            }
         }
     }
 }
@@ -41,7 +51,6 @@ fun getUpdates(botToken: String, updateId: Int): String {
     val client: HttpClient = HttpClient.newBuilder().build()
     val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
     val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-
     return response.body()
 }
 
@@ -50,6 +59,21 @@ fun getBotInfo(botToken: String): String {
     val client: HttpClient = HttpClient.newBuilder().build()
     val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetMe)).build()
     val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+    return response.body()
+}
 
+fun sendMessage(botToken: String, chatId: Long, text: String): String {
+    val urlSendMessage = "$BASE_URL$botToken/sendMessage"
+    val client: HttpClient = HttpClient.newBuilder().build()
+
+    val jsonBody = """{"chat_id":$chatId,"text":"$text"}"""
+
+    val request = HttpRequest.newBuilder()
+        .uri(URI.create(urlSendMessage))
+        .header("Content-Type", "application/json")
+        .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+        .build()
+
+    val response = client.send(request, HttpResponse.BodyHandlers.ofString())
     return response.body()
 }
