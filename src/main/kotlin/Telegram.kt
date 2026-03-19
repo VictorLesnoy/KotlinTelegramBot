@@ -5,7 +5,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
-const val BASE_URL = "https://api.telegram.org/bot/"
+const val BASE_URL = "https://api.telegram.org/bot"
 
 fun main(args: Array<String>) {
 
@@ -16,13 +16,15 @@ fun main(args: Array<String>) {
     val botToken = args[0]
     var updateId = 0
 
+    val botService = TelegramBotService(botToken)
+
     val botInfo: String = getBotInfo(botToken)
     println("Информация о боте (getMe):")
     println(botInfo)
 
     while (true) {
         Thread.sleep(2000)
-        val updates: String = getUpdates(botToken, updateId)
+        val updates: String = botService.getUpdates(updateId)
         println(updates)
 
         val ids = updateIdRegex.findAll(updates)
@@ -39,41 +41,17 @@ fun main(args: Array<String>) {
             println("Получено сообщение: '$text' от chat_id=$chatId")
 
             if (text == "Hello") {
-                sendMessage(botToken, chatId, text)
+                botService.sendMessage(chatId, text)
                 println("Ответ отправлен: '$text'")
             }
         }
     }
 }
 
-fun getUpdates(botToken: String, updateId: Int): String {
-    val urlGetUpdates = "$BASE_URL$botToken/getUpdates?offset=$updateId"
-    val client: HttpClient = HttpClient.newBuilder().build()
-    val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
-    val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-    return response.body()
-}
-
 fun getBotInfo(botToken: String): String {
     val urlGetMe = "$BASE_URL$botToken/getMe"
     val client: HttpClient = HttpClient.newBuilder().build()
     val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetMe)).build()
-    val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-    return response.body()
-}
-
-fun sendMessage(botToken: String, chatId: Long, text: String): String {
-    val urlSendMessage = "$BASE_URL$botToken/sendMessage"
-    val client: HttpClient = HttpClient.newBuilder().build()
-
-    val jsonBody = """{"chat_id":$chatId,"text":"$text"}"""
-
-    val request = HttpRequest.newBuilder()
-        .uri(URI.create(urlSendMessage))
-        .header("Content-Type", "application/json")
-        .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-        .build()
-
     val response = client.send(request, HttpResponse.BodyHandlers.ofString())
     return response.body()
 }
