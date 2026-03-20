@@ -22,6 +22,8 @@ fun main(args: Array<String>) {
     println("Информация о боте (getMe):")
     println(botInfo)
 
+    val trainer = LearnWordsTrainer()
+
     while (true) {
         Thread.sleep(2000)
         val updates: String = botService.getUpdates(updateId)
@@ -43,6 +45,11 @@ fun main(args: Array<String>) {
             if (text == "Hello") {
                 botService.sendMessage(chatId, text)
                 println("Ответ отправлен: '$text'")
+            }
+
+            if (text == "menu") {
+                botService.sendMenu(chatId, text)
+                println("Отправлено главное меню")
             }
         }
     }
